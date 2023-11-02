@@ -291,7 +291,7 @@ class UNO_server:
             "data" : data
         })
 
-server = WebsocketServer(port = 13254, host='127.0.0.1', loglevel=logging.INFO)
+server = WebsocketServer(port = 8000, host='127.0.0.1', loglevel=logging.INFO)
 uno = UNO_server()
 server.set_fn_new_client(uno.new_client)
 server.set_fn_message_received(uno.on_recieve)

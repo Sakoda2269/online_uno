@@ -334,7 +334,7 @@ class UNO_client:
 if __name__ == "__main__":
     websocket.enableTrace(False)
     uno = UNO_client()
-    ws = websocket.WebSocketApp("ws://127.0.0.1:13254",
+    ws = websocket.WebSocketApp("ws://127.0.0.1:8000",
                                 on_open=uno.on_open,
                                 on_message=uno.on_message,
                                 on_error=uno.on_error,
