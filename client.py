@@ -63,12 +63,22 @@ class UNO_client:
             self.card_processed = data["data"]["processed"]
             self.cards = data["data"]["cards"]
             self.num_card = data["data"]["num_card"]
-            self.UNO_turn(ws, data)
+            self.UNO_turn_thread = threading.Thread(target=self.UNO_turn, args=(ws, data))
+            self.UNO_turn_thread.start()
+            # self.UNO_turn(ws, data)
         
         if data["method"] == "wild":
             print("最初のカードはワイルドでした！")
             color = self.wild_color()
             ws.send(self.dataGen("wild", color))
+        
+        if data["method"] == "penalty":
+            print("残りの手札が1枚になったらUNOを宣告しましょう！")
+            print("ペナルティで引いたカード")
+            for c in data["data"]["card"]:
+                print(c)
+                self.my_cards.add(c)
+                self.cards.remove(c)
 
         if data["method"] == "message":
             sys.stdout.write("\033[1K\033[G")
@@ -92,7 +102,9 @@ class UNO_client:
     def UNO(self, ws):
         self.wait_player(ws)
         self.start_thred.join()
-        self.UNO_turn(ws)
+        self.UNO_turn_thread = threading.Thread(target=self.UNO_turn, args=(ws,))
+        self.UNO_turn_thread.start()
+        # self.UNO_turn(ws)
     
     def UNO_turn(self, ws, data={}):
         if self.is_myturn:
@@ -148,7 +160,7 @@ class UNO_client:
                 try:
                     card_num = int(select_num)
                 except Exception:
-                    self.command(select)
+                    self.command(select, ws)
                     select = input("出すカードの番号を選ぶか、-1でカードを1枚引くか、ほかのcommandを入力してください。helpを入力するとほかのcommand一覧を表示します。\n>> ").split()
                     continue
                 if card_num >= len(self.my_cards):
@@ -197,8 +209,14 @@ class UNO_client:
         else:
             print(f"{self.now_turn}のターンです! ")
             print("コマンド入力ができます。helpでコマンド一覧を表示します。")
-            self.wait_thread = threading.Thread(target=self.wait_turn)
-            self.wait_thread.start()
+            try :
+                if not self.wait_thread.is_alive():
+                    self.wait_thread = threading.Thread(target=self.wait_turn, args=(ws, ))
+                    self.wait_thread.start()
+            except  AttributeError:
+                self.wait_thread = threading.Thread(target=self.wait_turn, args=(ws, ))
+                self.wait_thread.start()
+            
 
     def wait_player(self, ws):
         started = False
@@ -239,7 +257,7 @@ class UNO_client:
         self.cards.remove(tmp)
         return tmp
     
-    def command(self, com):
+    def command(self, com, ws):
         if len(com) <= 0:
             return
         if com[0] == "help":
@@ -248,6 +266,8 @@ class UNO_client:
             print("card [card_name]: 指定したカードの効果を表示します", flush=True)
             print("mycard : あなたの手札を表示します", flush=True)
             print("now : 場のカードを表示します")
+            print("callUNO : 1ターン前のプレイヤーに対しUNO宣告なしを指摘します")
+            print("UNO : UNO宣告の仕方を表示します")
             print("exit:ゲームを終了します")
             print("=========================================", flush=True)
         elif com[0] == "enemy":
@@ -264,6 +284,10 @@ class UNO_client:
             print("=========================================", flush=True)
             print(f"場のカードは{self.table_card}です。")
             print("=========================================", flush=True)
+        elif com[0] == "callUNO":
+            ws.send(self.dataGen("callUNO", ""))
+        elif com[0] == "UNO":
+            print("UNO宣告は出すカードの後に半角スペースを開けてからUNOと入力します。\n例 : b1 UNO")
         elif com[0] == "exit":
             act = input("本当に終了しますか？(y/n)\n>>")
             while act not in {"y", "n"}:
@@ -304,7 +328,7 @@ class UNO_client:
     #カードが出せないならTrue
         return card not in {"wi", "wd", "ww", "sw"} and card[0] != self.table_card[0] and card[1] != self.table_card[1]
     
-    def wait_turn(self):
+    def wait_turn(self, ws):
         tmp = ""
         while not self.is_myturn:
             if msvcrt.kbhit():
@@ -313,7 +337,7 @@ class UNO_client:
                 print(str_tmp, end="", flush=True)
                 if input_tmp == b'\r':
                     print()
-                    self.command(tmp.split())
+                    self.command(tmp.split(), ws)
                     tmp = ""
                 elif input_tmp == b"\x08":
                     tmp = tmp[:-1]
@@ -334,7 +358,7 @@ class UNO_client:
 if __name__ == "__main__":
     websocket.enableTrace(False)
     uno = UNO_client()
-    ws = websocket.WebSocketApp("ws://127.0.0.1:8000",
+    ws = websocket.WebSocketApp("ws://192.168.3.50:8000",
                                 on_open=uno.on_open,
                                 on_message=uno.on_message,
                                 on_error=uno.on_error,

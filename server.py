@@ -194,6 +194,15 @@ class UNO_server:
                         "num_card":num_card
                     }))
         
+        if data["method"] == "callUNO":
+            if self.UNO_check != "":
+                server.send_message_to_all(self.dataGen("message", f"{self.player_name[self.UNO_check]}はUNOを宣告しなかったことを指摘された！"))
+                new_card = [self.get_card(self.cards) for i in range(2)]
+                server.send_message(self.players[self.UNO_check], self.dataGen("penalty",{"card":new_card}))
+                self.player_card[self.UNO_check] += new_card
+                self.UNO_check = ""
+
+        
         if data["method"] == "wild":
             self.wild = data["data"]
             self.wait_recv = False
@@ -213,7 +222,7 @@ class UNO_server:
         # 手札をプレイヤーに配る
         for p in self.players:
             self.player_card[p] = []
-            for i in range(7):
+            for i in range(2):
                 self.player_card[p].append(self.get_card(self.cards))
         
         # 順番の決定
@@ -291,7 +300,7 @@ class UNO_server:
             "data" : data
         })
 
-server = WebsocketServer(port = 8000, host='127.0.0.1', loglevel=logging.INFO)
+server = WebsocketServer(port = 8000, host='192.168.3.50', loglevel=logging.INFO)
 uno = UNO_server()
 server.set_fn_new_client(uno.new_client)
 server.set_fn_message_received(uno.on_recieve)
