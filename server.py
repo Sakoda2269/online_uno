@@ -20,6 +20,7 @@ class UNO_server:
     cards = []
     order = deque()
     table_card = ""
+    UNO_check = ""
 
     def new_client(self, client, server):
         new_id = str(uuid.uuid4())
@@ -40,6 +41,8 @@ class UNO_server:
             start_thread.start()
         
         if data["method"] == "turn":
+            if data["data"]["act"] != "skip":
+                self.UNO_check = ""
             num_card = {}
             for p in self.players:
                 num_card[self.player_name[p]] = len(self.player_card[p])
@@ -92,7 +95,7 @@ class UNO_server:
                                 f"{self.player_name[tmp]} は {data['data']['card']}を引き、それを出しました!"))
                 if data["data"]["card"] == "wd":
                     server.send_message_to_all(self.dataGen("message",
-                                f"{self.player_name[tmp]} select {data['data']['color']}!"))
+                                f"{self.player_name[tmp]} は {data['data']['color']}を選びました!"))
                     server.send_message_to_all(self.dataGen("turn", {
                         "turn_id":self.order[0],
                         "turn_name":self.player_name[self.order[0]],
@@ -133,6 +136,8 @@ class UNO_server:
                 self.player_card[tmp].remove(data["data"]["card"])
                 server.send_message_to_all(self.dataGen("message",
                                 f"{self.player_name[tmp]} は {data['data']['card']}を出しました!"))
+                if len(self.player_card[tmp]) == 1 and not data["data"]["UNO_call"]:
+                    self.UNO_check = tmp
                 if len(self.player_card[tmp]) <= 0:
                     server.send_message_to_all(self.dataGen("message",
                                     self.player_name[tmp] + "の勝ち!!")) 

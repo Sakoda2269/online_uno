@@ -10,7 +10,7 @@ import sys
 kind_od_cards = set()
 for c in {"r", "g", "b", "y"}:
     kind_od_cards |= {f"{c}{i}" for i in range(10)}
-    kind_od_cards |= {f"{c}{s}" for s in {"d", "s", "r"}}
+    kind_od_cards |= {f"{c}{s}" for s in {"d", "s", "r", "*"}}
 kind_od_cards.add("wi")
 kind_od_cards.add("wd")
 kind_od_cards.add("sw")
@@ -71,6 +71,8 @@ class UNO_client:
             ws.send(self.dataGen("wild", color))
 
         if data["method"] == "message":
+            sys.stdout.write("\033[1K\033[G")
+            sys.stdout.flush()
             print("\n=================\n")
             print(data["data"])
             print("\n=================")
@@ -136,7 +138,13 @@ class UNO_client:
             print(*[str(i).rjust(3) for i in range(len(self.my_cards))])
             select = input("出すカードの番号を選ぶか、-1でカードを1枚引くか、ほかのcommandを入力してください。helpを入力するとほかのcommand一覧を表示します。\n>> ").split()
             while True:
+                if len(select) <= 0:
+                    select = input("出すカードの番号を選ぶか、-1でカードを1枚引くか、ほかのcommandを入力してください。helpを入力するとほかのcommand一覧を表示します。\n>> ").split()
+                    continue
                 select_num = select[0]
+                UNO_call = False
+                if len(select) >= 2:
+                    UNO_call = select[1]=="UNO"
                 try:
                     card_num = int(select_num)
                 except Exception:
@@ -180,10 +188,10 @@ class UNO_client:
                         continue
                     self.my_cards.remove(select_card)
                     if select_card not in {"wi", "ww", "sw", "wd"}:
-                        ws.send(self.dataGen("turn", {"act":"trash", "card":select_card}))
+                        ws.send(self.dataGen("turn", {"act":"trash", "card":select_card, "UNO_call":UNO_call}))
                     elif select != "ww":
                         color = self.wild_color()
-                        ws.send(self.dataGen("turn", {"act":"trash", "card":select_card, "color":color}))
+                        ws.send(self.dataGen("turn", {"act":"trash", "card":select_card, "color":color, "UNO_call":UNO_call}))
                     return
 
         else:
@@ -232,6 +240,8 @@ class UNO_client:
         return tmp
     
     def command(self, com):
+        if len(com) <= 0:
+            return
         if com[0] == "help":
             print("=========================================", flush=True)
             print("enemy : プレイヤーのカードの枚数一覧を表示します", flush=True)
@@ -241,13 +251,19 @@ class UNO_client:
             print("exit:ゲームを終了します")
             print("=========================================", flush=True)
         elif com[0] == "enemy":
+            print("=========================================", flush=True)
             for p in self.num_card:
                 print(p + ":" + str(self.num_card[p]), flush=True)
+            print("=========================================", flush=True)
         elif com[0] == "mycard":
+            print("=========================================", flush=True)
             print(*list(map(lambda x: x.rjust(3), self.my_cards)), flush=True)
             print(*[str(i).rjust(3) for i in range(len(self.my_cards))], flush=True)
+            print("=========================================", flush=True)
         elif com[0] == "now":
+            print("=========================================", flush=True)
             print(f"場のカードは{self.table_card}です。")
+            print("=========================================", flush=True)
         elif com[0] == "exit":
             act = input("本当に終了しますか？(y/n)\n>>")
             while act not in {"y", "n"}:
