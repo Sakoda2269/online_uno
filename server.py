@@ -33,7 +33,7 @@ class UNO_server:
         data = json.loads(message)
         if data["method"] == "join":
             self.player_name[data["id"]] = data["data"]
-            server.send_message_to_all(self.dataGen("message", f"{data['data']} joined this game!"))
+            server.send_message_to_all(self.dataGen("message", f"{data['data']} がゲームに参加しました!"))
 
         if data["method"] == "start":
             start_thread = threading.Thread(target=self.start_UNO, args=(server,))
@@ -47,7 +47,7 @@ class UNO_server:
                 tmp = self.order.popleft()
                 self.order.append(tmp)
                 server.send_message_to_all(self.dataGen("message", 
-                                                        f"{self.player_name[tmp]}'s turn has been skiped!"))
+                                                        f"{self.player_name[tmp]}'のターンはスキップされました!"))
                 server.send_message_to_all(self.dataGen("turn", {
                     "turn_id":self.order[0],
                     "turn_name":self.player_name[self.order[0]],
@@ -60,7 +60,7 @@ class UNO_server:
                 tmp = self.order.popleft()
                 self.order.append(tmp)
                 server.send_message_to_all(self.dataGen("message", 
-                        f"{self.player_name[tmp]} draw {data['data']['act'][1]} card!"))
+                        f"{self.player_name[tmp]} は {data['data']['act'][1]} 枚カードを引きました!"))
                 for c in data["data"]["card"]:
                     self.player_card[tmp].append(c)
                     self.cards.remove(c)
@@ -89,7 +89,7 @@ class UNO_server:
                 self.table_card = data["data"]["card"]
                 self.cards.remove(data["data"]["card"])
                 server.send_message_to_all(self.dataGen("message",
-                                f"{self.player_name[tmp]} draw {data['data']['card']} and trash it!"))
+                                f"{self.player_name[tmp]} は {data['data']['card']}を引き、それを出しました!"))
                 if data["data"]["card"] == "wd":
                     server.send_message_to_all(self.dataGen("message",
                                 f"{self.player_name[tmp]} select {data['data']['color']}!"))
@@ -104,7 +104,7 @@ class UNO_server:
                     }))
                 elif data["data"]["card"] in {"wi", "sw"}:
                     server.send_message_to_all(self.dataGen("message",
-                                f"{self.player_name[tmp]} select {data['data']['color']}!"))
+                                f"{self.player_name[tmp]} は {data['data']['color']}を選びました!"))
                     self.table_card = data["data"]["color"] + "*"
                     server.send_message_to_all(self.dataGen("turn", {
                         "turn_id":self.order[0],
@@ -132,14 +132,14 @@ class UNO_server:
                 self.table_card = data["data"]["card"]
                 self.player_card[tmp].remove(data["data"]["card"])
                 server.send_message_to_all(self.dataGen("message",
-                                f"{self.player_name[tmp]} trash {data['data']['card']}!"))
+                                f"{self.player_name[tmp]} は {data['data']['card']}を出しました!"))
                 if len(self.player_card[tmp]) <= 0:
                     server.send_message_to_all(self.dataGen("message",
-                                    self.player_name[tmp] + "win!!")) 
+                                    self.player_name[tmp] + "の勝ち!!")) 
                     exit()
                 if data["data"]["card"] == "wd":
                     server.send_message_to_all(self.dataGen("message",
-                                f"{self.player_name[tmp]} select {data['data']['color']}!"))
+                                f"{self.player_name[tmp]} は {data['data']['color']}を選びました!"))
                     server.send_message_to_all(self.dataGen("turn", {
                         "turn_id":self.order[0],
                         "turn_name":self.player_name[self.order[0]],
@@ -151,7 +151,7 @@ class UNO_server:
                     }))
                 elif data["data"]["card"] == "wi":
                     server.send_message_to_all(self.dataGen("message",
-                                f"{self.player_name[tmp]} select {data['data']['color']}!"))
+                                f"{self.player_name[tmp]} は {data['data']['color']}を選びました!"))
                     self.table_card = data["data"]["color"] + "*"
                     server.send_message_to_all(self.dataGen("turn", {
                         "turn_id":self.order[0],
@@ -164,7 +164,7 @@ class UNO_server:
                     }))
                 elif data["data"]["card"] == "sw":
                     server.send_message_to_all(self.dataGen("message",
-                                f"{self.player_name[tmp]} select {data['data']['color']}!"))
+                                f"{self.player_name[tmp]} は {data['data']['color']}を選びました!"))
                     self.shuffle()
                     self.table_card = data["data"]["color"] + "*"
                     for p, cli in self.players.items():
@@ -220,7 +220,7 @@ class UNO_server:
         
         # 最初の場札
         self.table_card = self.get_card(self.cards)
-        self.table_card = "rs"
+        # self.table_card = "rs"
         while True:
             if self.table_card not in ["wd", "ww", "sw"]:
                 break

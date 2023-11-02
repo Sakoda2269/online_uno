@@ -187,9 +187,10 @@ class UNO_client:
                     return
 
         else:
+            print(f"{self.now_turn}のターンです! ")
+            print("コマンド入力ができます。helpでコマンド一覧を表示します。")
             self.wait_thread = threading.Thread(target=self.wait_turn)
             self.wait_thread.start()
-            print(f"{self.now_turn}'のターンです! ")
 
     def wait_player(self, ws):
         started = False
@@ -236,6 +237,7 @@ class UNO_client:
             print("enemy : プレイヤーのカードの枚数一覧を表示します", flush=True)
             print("card [card_name]: 指定したカードの効果を表示します", flush=True)
             print("mycard : あなたの手札を表示します", flush=True)
+            print("now : 場のカードを表示します")
             print("exit:ゲームを終了します")
             print("=========================================", flush=True)
         elif com[0] == "enemy":
@@ -244,6 +246,8 @@ class UNO_client:
         elif com[0] == "mycard":
             print(*list(map(lambda x: x.rjust(3), self.my_cards)), flush=True)
             print(*[str(i).rjust(3) for i in range(len(self.my_cards))], flush=True)
+        elif com[0] == "now":
+            print(f"場のカードは{self.table_card}です。")
         elif com[0] == "exit":
             act = input("本当に終了しますか？(y/n)\n>>")
             while act not in {"y", "n"}:
